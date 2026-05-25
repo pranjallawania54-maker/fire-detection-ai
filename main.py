@@ -1,9 +1,8 @@
 import streamlit as st
-from keras.models import load_model
+from tensorflow.keras.models import load_model
 import cv2
 import numpy as np
 from PIL import Image
-import serial
 import time
 
 # ======================
@@ -91,7 +90,7 @@ mode = st.sidebar.selectbox(
     "Mode",
     [
         "Upload Image",
-        "Live Camera + Sensor"
+        "Live Camera"
     ]
 )
 
@@ -169,7 +168,7 @@ if mode == "Upload Image":
             st.markdown(
                 f"""
                 <div class="result fire">
-                FIRE {confidence_percent}%
+                🔥 FIRE {confidence_percent}%
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -183,7 +182,7 @@ if mode == "Upload Image":
             st.markdown(
                 f"""
                 <div class="result smoke">
-                SMOKE {confidence_percent}%
+                💨 SMOKE {confidence_percent}%
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -197,7 +196,7 @@ if mode == "Upload Image":
             st.markdown(
                 f"""
                 <div class="result blocked">
-                CAMERA BLOCKED {confidence_percent}%
+                🚫 CAMERA BLOCKED {confidence_percent}%
                 </div>
                 """,
                 unsafe_allow_html=True
@@ -208,29 +207,35 @@ if mode == "Upload Image":
             st.markdown(
                 f"""
                 <div class="result safe">
-                SAFE {confidence_percent}%
+                ✅ SAFE {confidence_percent}%
                 </div>
                 """,
                 unsafe_allow_html=True
             )
 
 # ======================
-# LIVE CAMERA + SENSOR
+# LIVE CAMERA
 # ======================
-elif mode == "Live Camera + Sensor":
+elif mode == "Live Camera":
 
-    st.subheader("📷 Camera + 🔥 Sensor")
+    st.subheader("📷 Live Camera Detection")
 
-    # ======================
-    # CAMERA SELECTION
-    # ======================
     camera_type = st.radio(
         "Select Camera",
-        ["Laptop Camera", "Phone Camera"]
+        [
+            "Laptop Camera",
+            "Phone Camera"
+        ]
     )
 
-    # Laptop Camera
+    # ======================
+    # LAPTOP CAMERA
+    # ======================
     if camera_type == "Laptop Camera":
+
+        st.warning(
+            "Laptop webcam may not work on Streamlit Cloud"
+        )
 
         camera_source = st.number_input(
             "Laptop Camera Index",
@@ -240,7 +245,9 @@ elif mode == "Live Camera + Sensor":
             step=1
         )
 
-    # Phone Camera
+    # ======================
+    # PHONE CAMERA
+    # ======================
     else:
 
         st.info(
@@ -253,29 +260,16 @@ elif mode == "Live Camera + Sensor":
         )
 
     # ======================
-    # COM PORT
-    # ======================
-    port = st.text_input(
-        "Arduino COM Port",
-        "COM5"
-    )
-
-    # ======================
     # START BUTTON
     # ======================
     run = st.checkbox(
-        "Start System"
+        "Start Camera"
     )
 
     FRAME_WINDOW = st.image([])
 
-    sensor_box = st.empty()
-
     if run:
 
-        # ======================
-        # OPEN CAMERA
-        # ======================
         camera = cv2.VideoCapture(
             camera_source
         )
@@ -285,34 +279,6 @@ elif mode == "Live Camera + Sensor":
             1
         )
 
-        # ======================
-        # SENSOR
-        # ======================
-        arduino = None
-
-        try:
-
-            arduino = serial.Serial(
-                port,
-                9600,
-                timeout=1
-            )
-
-            time.sleep(2)
-
-            st.success(
-                "✅ Sensor Connected"
-            )
-
-        except Exception as e:
-
-            st.warning(
-                f"⚠️ Sensor Not Connected: {e}"
-            )
-
-        # ======================
-        # CAMERA CHECK
-        # ======================
         if not camera.isOpened():
 
             st.error(
@@ -333,7 +299,7 @@ elif mode == "Live Camera + Sensor":
 
                     break
 
-                # Flip Frame
+                # Flip frame
                 frame = cv2.flip(
                     frame,
                     1
@@ -428,61 +394,6 @@ elif mode == "Live Camera + Sensor":
                     print(e)
 
                 # ======================
-                # SENSOR DATA
-                # ======================
-                if arduino:
-
-                    try:
-
-                        if arduino.in_waiting > 0:
-
-                            data = (
-                                arduino.readline()
-                                .decode(errors="ignore")
-                                .strip()
-                                .upper()
-                            )
-
-                            if data == "FIRE":
-
-                                sensor_box.markdown(
-                                    """
-                                    <div class="result fire">
-                                    🔥 SENSOR: FIRE DETECTED
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                )
-
-                            elif data == "SMOKE":
-
-                                sensor_box.markdown(
-                                    """
-                                    <div class="result smoke">
-                                    💨 SENSOR: SMOKE DETECTED
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                )
-
-                            else:
-
-                                sensor_box.markdown(
-                                    """
-                                    <div class="result safe">
-                                    ✅ SENSOR: SAFE
-                                    </div>
-                                    """,
-                                    unsafe_allow_html=True
-                                )
-
-                    except Exception as sensor_error:
-
-                        sensor_box.error(
-                            f"Sensor Error: {sensor_error}"
-                        )
-
-                # ======================
                 # DRAW TEXT
                 # ======================
                 cv2.putText(
@@ -507,10 +418,6 @@ elif mode == "Live Camera + Sensor":
                     channels="RGB"
                 )
 
-            # ======================
-            # RELEASE
-            # ======================
-            camera.release()
+                time.sleep(0.03)
 
-            if arduino:
-                arduino.close()
+            camera.release()
