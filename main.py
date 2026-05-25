@@ -256,7 +256,7 @@ elif mode == "Live Camera":
 
         camera_source = st.text_input(
             "Phone Camera URL",
-            "http://192.168.1.5:8080/video"
+            "http://192.162.28.111:8080/video"
         )
 
     # ======================
