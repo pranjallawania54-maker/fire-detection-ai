@@ -1,0 +1,3 @@
+0 SAFE
+1 FIRE
+2 Camera Blocked
